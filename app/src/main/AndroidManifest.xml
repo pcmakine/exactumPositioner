@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.course.localization.exactumpositioner" >
 
     <application
-
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:replace="android:icon,android:theme"
+        android:name="com.orm.SugarApp">
+
+        <meta-data android:name="DATABASE" android:value="test.db" />
+        <meta-data android:name="VERSION" android:value="6" />
+        <meta-data android:name="QUERY_LOG" android:value="true" />
+        <meta-data android:name="com.course.localization.exactumpositioner" android:value="" />
+
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"

@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">ExactumPositioner</string>
     <string name="action_settings">Settings</string>
+    <string name="xCoordinateLabelBase">x:</string>
+    <string name="yCoordinateLabelBase">y:</string>
+    <string name="btnSave">Save</string>
+    <string name="btnLog">Log records</string>
+    <string name="drawerTitle">Select floor</string>
 </resources>
