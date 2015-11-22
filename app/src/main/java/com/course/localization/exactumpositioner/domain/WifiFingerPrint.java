@@ -1,4 +1,4 @@
-package com.course.localization.exactumpositioner;
+package com.course.localization.exactumpositioner.domain;
 
 import com.orm.SugarRecord;
 

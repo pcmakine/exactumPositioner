@@ -16,6 +16,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
+
 //http://www.c-sharpcorner.com/UploadFile/88b6e5/multi-touch-panning-pinch-zoom-image-view-in-android-using/
 public class CustomImageView extends ImageView {
     public static final String TAG = CustomImageView.class.getSimpleName();
@@ -236,29 +238,19 @@ public class CustomImageView extends ImageView {
             int bmWidth = drawable.getIntrinsicWidth();
             int bmHeight = drawable.getIntrinsicHeight();
             Log.d("bmSize", "bmWidth: " + bmWidth + " bmHeight : " + bmHeight);
-
             float scaleX = (float) viewWidth / (float) bmWidth;
-
             float scaleY = (float) viewHeight / (float) bmHeight;
-
             scale = Math.min(scaleX, scaleY);
-
             matrix.setScale(scale, scale);
 
             // Center the image
 
             float redundantYSpace = (float) viewHeight - (scale * (float) bmHeight);
-
             float redundantXSpace = (float) viewWidth - (scale * (float) bmWidth);
-
             redundantYSpace /= (float) 2;
-
             redundantXSpace /= (float) 2;
-
             matrix.postTranslate(redundantXSpace, redundantYSpace);
-
             origWidth = viewWidth - 2 * redundantXSpace;
-
             origHeight = viewHeight - 2 * redundantYSpace;
             setImageMatrix(matrix);
 

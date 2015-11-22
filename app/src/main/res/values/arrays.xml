@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="floor_names">
+        <item>Basement</item>
+        <item>First floor</item>
+        <item>Second floor</item>
+        <item>Third floor</item>
+    </string-array>
+</resources>

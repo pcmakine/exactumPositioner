@@ -1,14 +1,22 @@
 package com.course.localization.exactumpositioner;
 
+import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 
+import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,15 +32,14 @@ public class MainActivity extends AppCompatActivity {
         imageView = (CustomImageView) findViewById(R.id.imageView);
 
         Button btn = (Button) findViewById(R.id.saveBtn);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(imageView != null && imageView.getLastPoint() != null){
-                    WifiFingerPrint fp = new WifiFingerPrint(imageView.getLastPoint().x, imageView.getLastPoint().y);
-                    fp.save();
-                }
-            }
-        });
+        DrawerLayout mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ListView mDrawerList = (ListView) findViewById(R.id.left_drawer);
+
+
+        // Set the adapter for the list view
+        mDrawerList.setAdapter(new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, getResources().getStringArray(R.array.floor_names)));
+
     }
 
     public void saveRecord(View v){

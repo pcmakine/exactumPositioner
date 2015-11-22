@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/basement" android:icon="@android:drawable/ic_menu_camera"
+            android:title="Basement" />
+        <item android:id="@+id/firstFloor" android:icon="@android:drawable/ic_menu_gallery"
+            android:title="First floor" />
+        <item android:id="@+id/secondFloor" android:icon="@android:drawable/ic_menu_slideshow"
+            android:title="Second floor" />
+        <item android:id="@+id/thirdFloor" android:icon="@android:drawable/ic_menu_manage"
+            android:title="Third floor" />
+        <item android:id="@+id/fourthFloor" android:icon="@android:drawable/ic_menu_manage"
+            android:title="Fourth floor" />
+    </group>
+
+</menu>
