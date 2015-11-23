@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
 
@@ -56,9 +57,11 @@ public class CalibrationActivity extends AppCompatActivity
     public void toggleShowFingerPrints(){
         if(imageView != null){
             int floorNumber = ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber();
-            ((PositionMapDrawer) imageView.getDrawer()).toggleShowFingerPrints(
-                    WifiFingerPrint.find(WifiFingerPrint.class, "z= ?", String.valueOf(floorNumber)),
-                    imageView);
+            List<WifiFingerPrint> prints = WifiFingerPrint.find(WifiFingerPrint.class, "z= ?", String.valueOf(floorNumber));
+            if(prints == null || prints.isEmpty()){
+                Toast.makeText(this, "No fingerprints recorded yet for this floor!", Toast.LENGTH_LONG).show();
+            }
+            ((PositionMapDrawer) imageView.getDrawer()).toggleShowFingerPrints(prints, imageView);
         }
     }
 
