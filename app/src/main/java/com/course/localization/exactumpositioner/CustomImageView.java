@@ -29,21 +29,22 @@ public class CustomImageView extends ImageView {
     private static final int ZOOM = 2;
     private WifiFingerPrint wifiFingerPrint;
 
-    int mode = NONE;
+    private int mode = NONE;
 
     // Remember some things for zooming
-    PointF last = new PointF();
-    PointF start = new PointF();
-    float minScale = 1f;
-    float maxScale = 3f;
-    float[] m;
-    int viewWidth, viewHeight;
-    static final int CLICK = 3;
-    float saveScale = 1f;
+    private PointF last = new PointF();
+    private PointF start = new PointF();
+    private float minScale = 1f;
+    private float maxScale = 3f;
+    private float[] m;
+    private int viewWidth, viewHeight;
+    private static final int CLICK = 3;
+    private float saveScale = 1f;
     protected float origWidth, origHeight;
-    int oldMeasuredWidth, oldMeasuredHeight;
-    ScaleGestureDetector mScaleDetector;
-    Context context;
+    private int oldMeasuredWidth, oldMeasuredHeight;
+    private ScaleGestureDetector mScaleDetector;
+    private Context context;
+    private ImageViewDrawer drawer;
 
     public CustomImageView(Context context) {
         super(context);
@@ -102,7 +103,6 @@ public class CustomImageView extends ImageView {
                 }
                 setImageMatrix(matrix);
                 PointF point = translateCoordinatesBack(event);
-                Log.d(TAG, "Translated coordinates: " + point.toString());
                 TextView xView = (TextView) ((Activity) getContext()).findViewById(R.id.xCoordinate);
                 xView.setText(getContext().getResources().getString(R.string.xCoordinateLabelBase) + " " + point.x);
 
@@ -114,15 +114,11 @@ public class CustomImageView extends ImageView {
         });
     }
 
-    public PointF getLastPoint(){
-        return last;
-    }
-
-    private PointF translateCoordinatesBack(MotionEvent event) {
+    public PointF translateCoordinatesBack(MotionEvent event) {
         return translateCoordinatesBack(new PointF(event.getX(),  event.getY()));
     }
 
-    private PointF translateCoordinatesBack(PointF point){
+    public PointF translateCoordinatesBack(PointF point){
         Matrix inverse = new Matrix();
         matrix.invert(inverse);
         float[] pts = {point.x, point.y};
@@ -133,18 +129,47 @@ public class CustomImageView extends ImageView {
     public void setMaxZoom(float x) {
         maxScale = x;
     }
+    public PointF getLastPoint(){
+        return last;
+    }
+
+    public PointF getLasPointInBitmapCoords(){
+        return translateCoordinatesBack(new PointF(last.x, last.y));
+    }
+    public void setImageViewDrawer(ImageViewDrawer drawer){
+        this.drawer = drawer;
+    }
+    public ImageViewDrawer getDrawer(){
+        return this.drawer;
+    }
+
+    public Matrix getMyMatrix(){
+        return matrix;
+    }
+
+    public float getViewWidth(){
+        return viewWidth;
+    }
+
+    public float getViewHeight(){
+        return viewHeight;
+    }
+
+    public float getOrigWidth(){
+        return origWidth;
+    }
+    public float getOrigHeight(){
+        return origHeight;
+    }
+    public float getSaveScale(){
+        return saveScale;
+    }
 
     @Override
     public void onDraw(Canvas canvas){
         super.onDraw(canvas);
-        int width = getDrawable().getIntrinsicWidth();
-        int height = getDrawable().getIntrinsicHeight();
-        Log.d(TAG, "intrinsic width: " + width);
-        PointF realCoordinates = translateCoordinatesBack(last);
-        if(realCoordinates.x >= 0 && realCoordinates.y >= 0 && realCoordinates.x <= width && realCoordinates.y <= height){
-            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            paint.setColor(Color.RED);
-            canvas.drawCircle(last.x, last.y, 10, paint);
+        if(drawer != null){
+            drawer.onDraw(canvas, this);
         }
 
     }
@@ -179,7 +204,7 @@ public class CustomImageView extends ImageView {
         }
     }
 
-    void fixTrans() {
+    public void fixTrans() {
         matrix.getValues(m);
         float transX = m[Matrix.MTRANS_X];
         float transY = m[Matrix.MTRANS_Y];
@@ -191,7 +216,7 @@ public class CustomImageView extends ImageView {
 
 
 
-    float getFixTrans(float trans, float viewSize, float contentSize) {
+    public float getFixTrans(float trans, float viewSize, float contentSize) {
         float minTrans, maxTrans;
         if (contentSize <= viewSize) {
             minTrans = 0;

@@ -6,9 +6,11 @@
     <string name="btnSave">Save</string>
     <string name="btnLog">Log records</string>
     <string name="drawerTitle">Select floor</string>
-    <string name="title_activity_calibration">CalibrationActivity</string>
+    <string name="title_activity_calibration">Calibrate</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_save">Save</string>
+    <string name="action_show_all">Show all</string>
+    <string name="action_delete_all">Delete all</string>
 </resources>

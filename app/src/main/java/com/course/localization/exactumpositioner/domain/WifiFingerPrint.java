@@ -8,13 +8,15 @@ import com.orm.SugarRecord;
 public class WifiFingerPrint extends SugarRecord<WifiFingerPrint>{
     private float x;
     private float y;
+    private float z;
 
     public WifiFingerPrint(){
     }
 
-    public WifiFingerPrint(float x, float y){
+    public WifiFingerPrint(float x, float y, float z){
         this.x = x;
         this.y = y;
+        this.z = z;
     }
 
 

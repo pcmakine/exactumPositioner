@@ -1,8 +1,9 @@
 package com.course.localization.exactumpositioner;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.graphics.PointF;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
@@ -14,9 +15,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListView;
 
 import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
 
@@ -42,23 +40,25 @@ public class CalibrationActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
         imageView = (CustomImageView) findViewById(R.id.imageView);
-        Button btn = (Button) findViewById(R.id.saveBtn);
+        imageView.setImageViewDrawer(new PositionMapDrawer(WifiFingerPrint.listAll(WifiFingerPrint.class), 1, imageView));
     }
 
     public void saveRecord(View v){
-        if(imageView != null && imageView.getLastPoint() != null){
-            WifiFingerPrint fp = new WifiFingerPrint(imageView.getLastPoint().x, imageView.getLastPoint().y);
+        if(imageView != null && imageView.getLastPoint() != null && imageView.getDrawer().isPointInImage(imageView.getLastPoint(), imageView)){
+            PointF point = imageView.getLasPointInBitmapCoords();
+            Log.d(TAG, "last point: " + point.toString());
+            WifiFingerPrint fp = new WifiFingerPrint(point.x, point.y, ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber());
             fp.save();
         }
     }
 
-    public void logRecords(View view){
-        List<WifiFingerPrint> wifiFingerPrints = WifiFingerPrint.listAll(WifiFingerPrint.class);
-        Log.d(TAG, "all fingerPrints: ");
-        for(WifiFingerPrint print: wifiFingerPrints){
-            Log.d(TAG, print.toString());
+    public void toggleShowFingerPrints(){
+        if(imageView != null){
+            int floorNumber = ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber();
+            ((PositionMapDrawer) imageView.getDrawer()).toggleShowFingerPrints(
+                    WifiFingerPrint.find(WifiFingerPrint.class, "z= ?", String.valueOf(floorNumber)),
+                    imageView);
         }
     }
 
@@ -91,8 +91,12 @@ public class CalibrationActivity extends AppCompatActivity
             return true;
         }else if(id == R.id.action_save){
             saveRecord(null);
+        }else if(id == R.id.action_show_all){
+            toggleShowFingerPrints();
+        }else if(id == R.id.action_delete_all){
+            AlertDialog diaBox = ConfirmDelete();
+            diaBox.show();
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -101,22 +105,48 @@ public class CalibrationActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
         if (id == R.id.basement) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.basement_exactum));
+            ((PositionMapDrawer) imageView.getDrawer()).setFloorNumber(imageView, 0);
         } else if (id == R.id.firstFloor) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.floor_1_exactum));
+            ((PositionMapDrawer) imageView.getDrawer()).setFloorNumber(imageView, 1);
         }else if (id == R.id.secondFloor) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.floor_2_exactum));
+            ((PositionMapDrawer) imageView.getDrawer()).setFloorNumber(imageView, 2);
         } else if (id == R.id.thirdFloor) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.floor_3_exactum));
+            ((PositionMapDrawer) imageView.getDrawer()).setFloorNumber(imageView, 3);
         } else if (id == R.id.fourthFloor) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.floor_4_exactum));
+            ((PositionMapDrawer) imageView.getDrawer()).setFloorNumber(imageView, 4);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private AlertDialog ConfirmDelete()
+    {
+        AlertDialog myQuittingDialogBox =new AlertDialog.Builder(this)
+                //set message, title, and icon
+                .setTitle("Delete")
+                .setMessage("Do you want to Delete")
+                .setIcon(R.drawable.ic_delete_white_24dp)
+
+                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        WifiFingerPrint.deleteAll(WifiFingerPrint.class);
+                        dialog.dismiss();
+                    }
+
+                })
+
+                .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+
+                    }
+                })
+                .create();
+        return myQuittingDialogBox;
+
     }
 
 }
