@@ -102,12 +102,6 @@ public class CustomImageView extends ImageView {
                         break;
                 }
                 setImageMatrix(matrix);
-                PointF point = translateCoordinatesBack(event);
-                TextView xView = (TextView) ((Activity) getContext()).findViewById(R.id.xCoordinate);
-                xView.setText(getContext().getResources().getString(R.string.xCoordinateLabelBase) + " " + point.x);
-
-                TextView yView = (TextView) ((Activity) getContext()).findViewById(R.id.yCoordinate);
-                yView.setText(getContext().getResources().getString(R.string.yCoordinateLabelBase) + " " + point.y);
                 invalidate();
                 return true; // indicate event was handled
             }

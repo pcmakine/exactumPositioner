@@ -1,5 +1,6 @@
 package com.course.localization.exactumpositioner;
 
+import android.app.Activity;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -8,6 +9,7 @@ import android.graphics.PointF;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
 
@@ -53,6 +55,12 @@ public class PositionMapDrawer implements ImageViewDrawer{
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 paint.setColor(Color.RED);
                 canvas.drawCircle(view.getLastPoint().x, view.getLastPoint().y, 10, paint);
+
+                PointF point = view.translateCoordinatesBack(view.getLastPoint());
+                TextView xView = (TextView) ((Activity) view.getContext()).findViewById(R.id.xCoordinate);
+                xView.setText(view.getContext().getResources().getString(R.string.xCoordinateLabelBase) + " " + point.x);
+                TextView yView = (TextView) ((Activity) view.getContext()).findViewById(R.id.yCoordinate);
+                yView.setText(view.getContext().getResources().getString(R.string.yCoordinateLabelBase) + " " + point.y);
             }
         }
     }
@@ -81,6 +89,8 @@ public class PositionMapDrawer implements ImageViewDrawer{
         if(floorPlans.get(floorNumber) != null){
             this.floorNumber = floorNumber;
             this.fingerPrints = WifiFingerPrint.find(WifiFingerPrint.class, "z= ?", String.valueOf(floorNumber));
+            TextView header = (TextView) ((Activity) view.getContext()).findViewById(R.id.floorNumberTitle);
+            header.setText(view.getContext().getResources().getString(R.string.floor_base) + floorNumber);
             view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), floorPlans.get(floorNumber)));
         }
     }

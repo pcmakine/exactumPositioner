@@ -1,9 +1,19 @@
 package com.course.localization.exactumpositioner;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PointF;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.PowerManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
@@ -19,12 +29,32 @@ import android.widget.Toast;
 
 import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
 public class CalibrationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     public static final String TAG = CalibrationActivity.class.getSimpleName();
     private CustomImageView imageView;
+    private WifiManager mainWifi;
+    private PowerManager.WakeLock wakeLock;
+    private WifiReceiver receiverWifi;
+    private List<ScanResult> wifiList;
+    static StringBuilder fingerprint;
+    static StringBuilder macs;
+    static StringBuilder rssi;
+    //Popup dialog that displays progress (also helps detect if the user has aborted the training process)
+    static ProgressDialog progressDialog;
+    //The maximum number of fingerprints we want to record (for a ballpark figure, assume approx. 1 fingerprint/second on current Android devices)
+    static final int MAXPRINTS = 10;
+    //Asynchronous task (thread). We capture the initialization so we can control it after it's started
+    AsyncTask<Integer, String, Hashtable<String, List<Integer>>> task = new RecordFingerprints();
+    //Root directory of the phone's SD card. We delve into subfolders from here
+    static final File PATH = Environment.getExternalStorageDirectory();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +62,7 @@ public class CalibrationActivity extends AppCompatActivity
         setContentView(R.layout.activity_calibration);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        setTitle(R.string.title_activity_calibration);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -43,6 +74,21 @@ public class CalibrationActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
         imageView = (CustomImageView) findViewById(R.id.imageView);
         imageView.setImageViewDrawer(new PositionMapDrawer(WifiFingerPrint.listAll(WifiFingerPrint.class), 1, imageView));
+
+        //Initializations
+        mainWifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wakeLock = pm.newWakeLock(
+                PowerManager.SCREEN_DIM_WAKE_LOCK, "My wakelock");
+        receiverWifi = new WifiReceiver();
+        progressDialog= new ProgressDialog(CalibrationActivity.this);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setCancelable(true);
+        progressDialog.setTitle("RECORDING");
+        progressDialog.setMax(MAXPRINTS);
+        fingerprint = new StringBuilder();
+        registerReceiver(receiverWifi, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
     }
 
     public void saveRecord(View v){
@@ -63,6 +109,40 @@ public class CalibrationActivity extends AppCompatActivity
             }
             ((PositionMapDrawer) imageView.getDrawer()).toggleShowFingerPrints(prints, imageView);
         }
+    }
+
+    public void startScan(View view){
+        mainWifi.startScan();
+        progressDialog.show();
+       /* //Task has been initialized but not run a single time yet
+        if(task.getStatus()== AsyncTask.Status.PENDING){
+            //Show the progress dialog
+            progressDialog.setTitle("TRAINING CELL ");
+            progressDialog.show();
+            //Start the recording
+            task.execute(0);
+
+        }
+        //Task has been allowed to finish
+        if(task.getStatus()== AsyncTask.Status.FINISHED){
+            //Re-initialize
+            task = new RecordFingerprints();
+            progressDialog.setTitle("TRAINING");
+            progressDialog.show();
+            task.execute(0);
+        }*/
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(receiverWifi);
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        registerReceiver(receiverWifi, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        super.onResume();
     }
 
     @Override
@@ -149,6 +229,109 @@ public class CalibrationActivity extends AppCompatActivity
                 })
                 .create();
         return myQuittingDialogBox;
+
+    }
+
+
+    class WifiReceiver extends BroadcastReceiver {
+        public final String TAG = WifiReceiver.class.getSimpleName();
+
+        /*
+        What to do when our BroadcastReceiver (or in this case, the WifiReceiver that implements it) returns its result
+         */
+        public void onReceive(Context c, Intent intent) {
+            Log.d("FINGER","Scan received");
+
+            if(progressDialog.getProgress()<progressDialog.getMax()){
+                wifiList = mainWifi.getScanResults();
+
+                rssi = new StringBuilder();
+                macs = new StringBuilder();
+                for(int j=0;j<wifiList.size();j++){
+                    macs.append(wifiList.get(j).BSSID);
+                    if(j<wifiList.size()-1){
+                        macs.append(",");
+                    }
+                    rssi.append(wifiList.get(j).level);
+                    if(j<wifiList.size()-1){
+                        rssi.append(",");
+                    }
+                }
+                fingerprint.append(macs);
+                fingerprint.append("\n");
+                fingerprint.append(rssi);
+                fingerprint.append("\n");
+
+                if(progressDialog.getProgress() == 1){
+                    Toast.makeText(CalibrationActivity.this, fingerprint.toString(), Toast.LENGTH_LONG).show();
+                }
+                progressDialog.incrementProgressBy(1);
+
+                mainWifi.startScan();
+                Log.d("FINGER", "Scan initiated");
+                Log.d(TAG, "progress: " + progressDialog.getProgress());
+            }else{
+                progressDialog.dismiss();
+                progressDialog.setProgress(0);
+            }
+
+        }
+    }
+
+    //Asynchronous task runs in background so we don't make the UI wait
+    private class RecordFingerprints extends AsyncTask<Integer, String, Hashtable<String,List<Integer>>> {
+        boolean running = true;
+        protected Hashtable<String,List<Integer>> doInBackground(Integer... params) {
+            progressDialog.setProgress(0);
+            mainWifi.startScan();
+            fingerprint = new StringBuilder();
+
+            wakeLock.acquire();
+            while(running){
+                //Store the recorded fingerprint in a file named after the cell in which it was recorded
+                if(!progressDialog.isShowing() || progressDialog.getProgress()>=progressDialog.getMax()){
+                    File file = new File(PATH, "/fingerprints/"+params[0]+".txt");
+                    try{
+                        OutputStream os = new FileOutputStream(file,false);
+                        os.write(fingerprint.toString().getBytes());
+                        os.close();
+                    }
+                    catch(Exception e){Log.d("HELP","Need somebody");}
+                    progressDialog.dismiss();
+                    return null;
+                }
+
+                else{
+                    publishProgress("");
+                }
+
+                Thread.currentThread();
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            wakeLock.release();
+            return null;
+        }
+
+        protected void onProgressUpdate(String... progress) {
+            //progressDialog.incrementProgressBy(1);
+        }
+
+        @SuppressWarnings("unused")
+        protected void onPostExecute(ArrayList<Integer> result) {
+            running = true;
+        }
+
+        @Override
+        protected void onCancelled() {
+            progressDialog.dismiss();
+            running = false;
+            return;
+        }
 
     }
 

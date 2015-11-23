@@ -13,4 +13,6 @@
     <string name="action_save">Save</string>
     <string name="action_show_all">Show all</string>
     <string name="action_delete_all">Delete all</string>
+    <string name="floor_base">"Exactum floor: "</string>
+    <string name="start_scan">Scan</string>
 </resources>

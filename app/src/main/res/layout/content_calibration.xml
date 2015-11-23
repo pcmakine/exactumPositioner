@@ -9,6 +9,14 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/app_bar_calibration"
     tools:context="com.course.localization.exactumpositioner.CalibrationActivity">
+    <TextView
+        android:id="@+id/floorNumberTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:text="@string/floor_base"
+        style="@android:style/TextAppearance.Large"/>
     <com.course.localization.exactumpositioner.CustomImageView
         android:id="@+id/imageView"
         android:layout_width="fill_parent"
@@ -16,6 +24,7 @@
         android:src="@drawable/floor_1_exactum"
         android:scaleType="matrix"
         android:layout_above="@+id/coordinateLabels"
+        android:layout_below="@id/floorNumberTitle"
         />
     <LinearLayout
         android:id="@+id/coordinateLabels"
@@ -35,6 +44,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/yCoordinateLabelBase"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/start_scan"
+            android:onClick="startScan"/>
 
 <!--
         <Button
