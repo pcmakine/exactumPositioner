@@ -1,9 +1,6 @@
 package com.course.localization.exactumpositioner;
 
-import android.app.Activity;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.PointF;
 import android.content.Context;
 import android.graphics.Matrix;
@@ -14,7 +11,6 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
 
@@ -125,6 +121,9 @@ public class CustomImageView extends ImageView {
     }
     public PointF getLastPoint(){
         return last;
+    }
+    public void setLastPoint(PointF point){
+        this.last = point;
     }
 
     public PointF getLasPointInBitmapCoords(){

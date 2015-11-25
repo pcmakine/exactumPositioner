@@ -36,6 +36,7 @@ public class PositionMapDrawer implements ImageViewDrawer{
         aMap.put(4, R.drawable.floor_4_exactum);
         floorPlans = Collections.unmodifiableMap(aMap);
     }
+    private PointF lastChosenPointImgCoords;
 
     public PositionMapDrawer(List<WifiFingerPrint> fingerPrints, int floorNumber, ImageView view){
         this.fingerPrints = fingerPrints;
@@ -50,6 +51,7 @@ public class PositionMapDrawer implements ImageViewDrawer{
                 paint.setColor(Color.RED);
                 canvas.drawCircle(point.x, point.y, 10, paint);
             }
+            lastChosenPointImgCoords = null;
         }else{
             if(isPointInImage(view.getLastPoint(), view)){
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -61,6 +63,9 @@ public class PositionMapDrawer implements ImageViewDrawer{
                 xView.setText(view.getContext().getResources().getString(R.string.xCoordinateLabelBase) + " " + point.x);
                 TextView yView = (TextView) ((Activity) view.getContext()).findViewById(R.id.yCoordinate);
                 yView.setText(view.getContext().getResources().getString(R.string.yCoordinateLabelBase) + " " + point.y);
+                lastChosenPointImgCoords = point;
+            }else{
+                lastChosenPointImgCoords = null;
             }
         }
     }
@@ -96,6 +101,9 @@ public class PositionMapDrawer implements ImageViewDrawer{
     }
     public int getFloorNumber(){
         return floorNumber;
+    }
+    public PointF getLastChosenPointImgCoords(){
+        return lastChosenPointImgCoords;
     }
 
 }

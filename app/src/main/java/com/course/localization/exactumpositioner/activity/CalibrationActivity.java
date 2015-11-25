@@ -1,4 +1,4 @@
-package com.course.localization.exactumpositioner;
+package com.course.localization.exactumpositioner.activity;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -10,11 +10,9 @@ import android.content.IntentFilter;
 import android.graphics.PointF;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -27,13 +25,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.course.localization.exactumpositioner.CommonConstants;
+import com.course.localization.exactumpositioner.CustomImageView;
+import com.course.localization.exactumpositioner.OptionProgressDialog;
+import com.course.localization.exactumpositioner.PositionMapDrawer;
+import com.course.localization.exactumpositioner.R;
 import com.course.localization.exactumpositioner.domain.WifiFingerPrint;
-
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 
 public class CalibrationActivity extends AppCompatActivity
@@ -48,13 +48,14 @@ public class CalibrationActivity extends AppCompatActivity
     static StringBuilder macs;
     static StringBuilder rssi;
     //Popup dialog that displays progress (also helps detect if the user has aborted the training process)
-    static ProgressDialog progressDialog;
+    static OptionProgressDialog progressDialog;
     //The maximum number of fingerprints we want to record (for a ballpark figure, assume approx. 1 fingerprint/second on current Android devices)
     static final int MAXPRINTS = 10;
     //Asynchronous task (thread). We capture the initialization so we can control it after it's started
-    AsyncTask<Integer, String, Hashtable<String, List<Integer>>> task = new RecordFingerprints();
+    //AsyncTask<Integer, String, Hashtable<String, List<Integer>>> task = new RecordFingerprints();
     //Root directory of the phone's SD card. We delve into subfolders from here
     static final File PATH = Environment.getExternalStorageDirectory();
+    private List<WifiFingerPrint> prints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,21 +82,50 @@ public class CalibrationActivity extends AppCompatActivity
         wakeLock = pm.newWakeLock(
                 PowerManager.SCREEN_DIM_WAKE_LOCK, "My wakelock");
         receiverWifi = new WifiReceiver();
-        progressDialog= new ProgressDialog(CalibrationActivity.this);
+        setupProgressDialog();
+        fingerprint = new StringBuilder();
+        prints = new ArrayList<>();
+    }
+
+    private void setupProgressDialog(){
+        progressDialog= new OptionProgressDialog(CalibrationActivity.this);
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setCancelable(true);
         progressDialog.setTitle("RECORDING");
         progressDialog.setMax(MAXPRINTS);
-        fingerprint = new StringBuilder();
-        registerReceiver(receiverWifi, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
+        progressDialog.setButton(ProgressDialog.BUTTON_POSITIVE, "Save", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                Toast.makeText(CalibrationActivity.this, "Saving fingerprints...", Toast.LENGTH_SHORT).show();
+            }
+        });
+        progressDialog.setButton(ProgressDialog.BUTTON_NEUTRAL, "View", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                progressDialog.dismiss();
+                Intent intent = new Intent(CalibrationActivity.this, ScanResults.class);
+                intent.putExtra(CommonConstants.FINGERPRINT_KEY, (Serializable) prints);
+                startActivity(intent);
+            }
+        });
+        progressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Dismiss", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                progressDialog.dismiss();
+            }
+        });
+        progressDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                prints = null;
+            }
+        });
     }
 
+
     public void saveRecord(View v){
-        if(imageView != null && imageView.getLastPoint() != null && imageView.getDrawer().isPointInImage(imageView.getLastPoint(), imageView)){
-            PointF point = imageView.getLasPointInBitmapCoords();
+        if(imageView != null && ((PositionMapDrawer) imageView.getDrawer()).getLastChosenPointImgCoords() != null){
+            PointF point = ((PositionMapDrawer) imageView.getDrawer()).getLastChosenPointImgCoords();
             Log.d(TAG, "last point: " + point.toString());
-            WifiFingerPrint fp = new WifiFingerPrint(point.x, point.y, ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber());
+            WifiFingerPrint fp = new WifiFingerPrint(point.x, point.y, ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber(), null, null, null);
             fp.save();
         }
     }
@@ -112,8 +142,13 @@ public class CalibrationActivity extends AppCompatActivity
     }
 
     public void startScan(View view){
-        mainWifi.startScan();
-        progressDialog.show();
+        if( ((PositionMapDrawer) imageView.getDrawer()).getLastChosenPointImgCoords() != null ){
+            registerReceiver(receiverWifi, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+            mainWifi.startScan();
+            progressDialog.show();
+        }else{
+            Toast.makeText(this, "Please choose your position first by clicking the map", Toast.LENGTH_SHORT).show();
+        }
        /* //Task has been initialized but not run a single time yet
         if(task.getStatus()== AsyncTask.Status.PENDING){
             //Show the progress dialog
@@ -133,15 +168,22 @@ public class CalibrationActivity extends AppCompatActivity
         }*/
     }
 
+    private void removeReceiver(){
+        try{
+            unregisterReceiver(receiverWifi);
+        }catch (Exception e){
+            Log.e(TAG, "tried to unregister receiver again");
+        }
+    }
+
     @Override
     protected void onPause() {
-        unregisterReceiver(receiverWifi);
+        removeReceiver();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        registerReceiver(receiverWifi, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
         super.onResume();
     }
 
@@ -199,7 +241,6 @@ public class CalibrationActivity extends AppCompatActivity
         } else if (id == R.id.fourthFloor) {
             ((PositionMapDrawer) imageView.getDrawer()).setFloorNumber(imageView, 4);
         }
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
@@ -218,13 +259,11 @@ public class CalibrationActivity extends AppCompatActivity
                         WifiFingerPrint.deleteAll(WifiFingerPrint.class);
                         dialog.dismiss();
                     }
-
                 })
 
                 .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
-
                     }
                 })
                 .create();
@@ -241,13 +280,27 @@ public class CalibrationActivity extends AppCompatActivity
          */
         public void onReceive(Context c, Intent intent) {
             Log.d("FINGER","Scan received");
-
+            if(prints == null){
+                prints = new ArrayList<>();
+            }
             if(progressDialog.getProgress()<progressDialog.getMax()){
                 wifiList = mainWifi.getScanResults();
 
                 rssi = new StringBuilder();
                 macs = new StringBuilder();
                 for(int j=0;j<wifiList.size();j++){
+
+                    PointF point = ((PositionMapDrawer) imageView.getDrawer()).getLastChosenPointImgCoords();
+                    WifiFingerPrint fp = new WifiFingerPrint(
+                            point.x,
+                            point.y,
+                            ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber(),
+                            wifiList.get(j).level,
+                            wifiList.get(j).BSSID,
+                            wifiList.get(j).SSID);
+                            prints.add(fp);
+
+
                     macs.append(wifiList.get(j).BSSID);
                     if(j<wifiList.size()-1){
                         macs.append(",");
@@ -261,23 +314,19 @@ public class CalibrationActivity extends AppCompatActivity
                 fingerprint.append("\n");
                 fingerprint.append(rssi);
                 fingerprint.append("\n");
-
-                if(progressDialog.getProgress() == 1){
-                    Toast.makeText(CalibrationActivity.this, fingerprint.toString(), Toast.LENGTH_LONG).show();
-                }
                 progressDialog.incrementProgressBy(1);
+
 
                 mainWifi.startScan();
                 Log.d("FINGER", "Scan initiated");
                 Log.d(TAG, "progress: " + progressDialog.getProgress());
             }else{
-                progressDialog.dismiss();
-                progressDialog.setProgress(0);
+               // progressDialog.incrementProgressBy(-MAXPRINTS);
+                removeReceiver();
             }
-
         }
     }
-
+/*
     //Asynchronous task runs in background so we don't make the UI wait
     private class RecordFingerprints extends AsyncTask<Integer, String, Hashtable<String,List<Integer>>> {
         boolean running = true;
@@ -333,6 +382,6 @@ public class CalibrationActivity extends AppCompatActivity
             return;
         }
 
-    }
+    }*/
 
 }
