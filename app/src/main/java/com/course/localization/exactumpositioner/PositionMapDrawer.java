@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public class PositionMapDrawer implements ImageViewDrawer{
     public static final String TAG = PositionMapDrawer.class.getSimpleName();
+    private static final int CIRCLE_RADIUS = 20;
     private List<WifiFingerPrint> fingerPrints;
     private boolean showFingerPrints;
     private int floorNumber;
@@ -49,14 +50,14 @@ public class PositionMapDrawer implements ImageViewDrawer{
                 PointF point = imageCoordsToScreenCoords(new PointF(fingerPrint.getX(), fingerPrint.getY()), view);
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 paint.setColor(Color.RED);
-                canvas.drawCircle(point.x, point.y, 10, paint);
+                canvas.drawCircle(point.x, point.y, CIRCLE_RADIUS, paint);
             }
             lastChosenPointImgCoords = null;
         }else{
             if(isPointInImage(view.getLastPoint(), view)){
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 paint.setColor(Color.RED);
-                canvas.drawCircle(view.getLastPoint().x, view.getLastPoint().y, 10, paint);
+                canvas.drawCircle(view.getLastPoint().x, view.getLastPoint().y, CIRCLE_RADIUS, paint);
 
                 PointF point = view.translateCoordinatesBack(view.getLastPoint());
                 TextView xView = (TextView) ((Activity) view.getContext()).findViewById(R.id.xCoordinate);

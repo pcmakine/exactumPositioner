@@ -15,5 +15,6 @@
     <string name="action_delete_all">Delete all</string>
     <string name="floor_base">"Exactum floor: "</string>
     <string name="start_scan">Scan</string>
-    <string name="title_activity_view_finger_prints">ViewFingerPrints</string>
+    <string name="title_activity_view_finger_prints">Scan results</string>
+    <string name="action_list_all">List all</string>
 </resources>

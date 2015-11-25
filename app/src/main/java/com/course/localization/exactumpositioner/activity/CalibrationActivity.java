@@ -96,15 +96,14 @@ public class CalibrationActivity extends AppCompatActivity
 
         progressDialog.setButton(ProgressDialog.BUTTON_POSITIVE, "Save", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
-                Toast.makeText(CalibrationActivity.this, "Saving fingerprints...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CalibrationActivity.this, "Saving " + prints.size() + " fingerprints...", Toast.LENGTH_SHORT).show();
+                savePrints();
             }
         });
         progressDialog.setButton(ProgressDialog.BUTTON_NEUTRAL, "View", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 progressDialog.dismiss();
-                Intent intent = new Intent(CalibrationActivity.this, ScanResults.class);
-                intent.putExtra(CommonConstants.FINGERPRINT_KEY, (Serializable) prints);
-                startActivity(intent);
+                startListActivity(prints, true);
             }
         });
         progressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Dismiss", new DialogInterface.OnClickListener() {
@@ -120,14 +119,29 @@ public class CalibrationActivity extends AppCompatActivity
         });
     }
 
+    private void startListActivity(List<WifiFingerPrint> fingerPrints, boolean newRecords){
+        Intent intent = new Intent(CalibrationActivity.this, ScanResults.class);
+        intent.putExtra(CommonConstants.FINGERPRINT_KEY, (Serializable) fingerPrints);
+        intent.putExtra(CommonConstants.NEW_RECORDS, newRecords);
+        startActivity(intent);
+    }
 
-    public void saveRecord(View v){
+   /* public void saveRecord(View v){
         if(imageView != null && ((PositionMapDrawer) imageView.getDrawer()).getLastChosenPointImgCoords() != null){
             PointF point = ((PositionMapDrawer) imageView.getDrawer()).getLastChosenPointImgCoords();
             Log.d(TAG, "last point: " + point.toString());
             WifiFingerPrint fp = new WifiFingerPrint(point.x, point.y, ((PositionMapDrawer) imageView.getDrawer()).getFloorNumber(), null, null, null);
             fp.save();
         }
+    }*/
+
+    private void savePrints(){
+        if(prints != null){
+            for( WifiFingerPrint print : prints ){
+                print.save();
+            }
+        }
+        prints = null;
     }
 
     public void toggleShowFingerPrints(){
@@ -176,6 +190,12 @@ public class CalibrationActivity extends AppCompatActivity
         }
     }
 
+    private void listAll(){
+       // List<WifiFingerPrint> allPrints = WifiFingerPrint.findAll(WifiFingerPrint.class);
+        List<WifiFingerPrint> allPrints = WifiFingerPrint.find(WifiFingerPrint.class, null, null);
+        startListActivity(allPrints, false);
+    }
+
     @Override
     protected void onPause() {
         removeReceiver();
@@ -214,13 +234,15 @@ public class CalibrationActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
-        }else if(id == R.id.action_save){
-            saveRecord(null);
-        }else if(id == R.id.action_show_all){
+        }/*else if(id == R.id.action_save){
+           // saveRecord(null);
+        }*/else if(id == R.id.action_show_all){
             toggleShowFingerPrints();
         }else if(id == R.id.action_delete_all){
             AlertDialog diaBox = ConfirmDelete();
             diaBox.show();
+        }else if(id == R.id.action_list_all){
+            listAll();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -251,9 +273,8 @@ public class CalibrationActivity extends AppCompatActivity
         AlertDialog myQuittingDialogBox =new AlertDialog.Builder(this)
                 //set message, title, and icon
                 .setTitle("Delete")
-                .setMessage("Do you want to Delete")
+                .setMessage("Do you want to delete all fingerprints?")
                 .setIcon(R.drawable.ic_delete_white_24dp)
-
                 .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         WifiFingerPrint.deleteAll(WifiFingerPrint.class);
@@ -315,7 +336,6 @@ public class CalibrationActivity extends AppCompatActivity
                 fingerprint.append(rssi);
                 fingerprint.append("\n");
                 progressDialog.incrementProgressBy(1);
-
 
                 mainWifi.startScan();
                 Log.d("FINGER", "Scan initiated");

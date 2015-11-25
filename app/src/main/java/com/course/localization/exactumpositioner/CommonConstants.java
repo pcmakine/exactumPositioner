@@ -5,4 +5,5 @@ package com.course.localization.exactumpositioner;
  */
 public class CommonConstants {
     public static final String FINGERPRINT_KEY = "fingerprints";
+    public static final  String NEW_RECORDS = "newRecords";
 }
