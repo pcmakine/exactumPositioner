@@ -39,8 +39,8 @@ public class PositionMapDrawer implements ImageViewDrawer{
     }
     private PointF lastChosenPointImgCoords;
 
-    public PositionMapDrawer(List<WifiFingerPrint> fingerPrints, int floorNumber, ImageView view){
-        this.fingerPrints = fingerPrints;
+    public PositionMapDrawer( int floorNumber, ImageView view){
+      //  this.fingerPrints = fingerPrints;
         setFloorNumber(view, floorNumber);
     }
 
@@ -94,7 +94,8 @@ public class PositionMapDrawer implements ImageViewDrawer{
     public void setFloorNumber(ImageView view, int floorNumber){
         if(floorPlans.get(floorNumber) != null){
             this.floorNumber = floorNumber;
-            this.fingerPrints = WifiFingerPrint.find(WifiFingerPrint.class, "z= ?", String.valueOf(floorNumber));
+            this.fingerPrints = DbService.findPrintsGrouppedByLocation(floorNumber);
+            //this.fingerPrints = WifiFingerPrint.find(WifiFingerPrint.class, "z= ?", String.valueOf(floorNumber));
             TextView header = (TextView) ((Activity) view.getContext()).findViewById(R.id.floorNumberTitle);
             header.setText(view.getContext().getResources().getString(R.string.floor_base) + floorNumber);
             view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), floorPlans.get(floorNumber)));

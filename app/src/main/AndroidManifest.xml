@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.course.localization.exactumpositioner" >
+    package="com.course.localization.exactumpositioner">
 
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name="com.orm.SugarApp"
@@ -16,13 +17,13 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        tools:replace="android:icon,android:theme" >
+        tools:replace="android:icon,android:theme">
         <meta-data
             android:name="DATABASE"
             android:value="test.db" />
         <meta-data
             android:name="VERSION"
-            android:value="15" />
+            android:value="19" />
         <meta-data
             android:name="QUERY_LOG"
             android:value="true" />
@@ -31,8 +32,8 @@
             android:value="com.course.localization.exactumpositioner.domain" />
 
         <activity
-            android:name=".activity.CalibrationActivity"
-            android:theme="@style/AppTheme.NoActionBar" >
+            android:name=".activity.Calibration"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -42,17 +43,19 @@
         <activity
             android:name=".activity.ScanResults"
             android:label="@string/title_activity_view_finger_prints"
-            android:parentActivityName=".activity.CalibrationActivity"
-            android:theme="@style/AppTheme.NoActionBar" >
+            android:parentActivityName=".activity.Calibration"
+            android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".activity.CalibrationActivity" />
+                android:value=".activity.Calibration" />
         </activity>
 
         <service
             android:name=".DbService"
-            android:exported="false" >
-        </service>
+            android:exported="false"></service>
+        <service
+            android:name=".DataExportService"
+            android:exported="false"></service>
     </application>
 
 </manifest>

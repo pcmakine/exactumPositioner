@@ -17,4 +17,5 @@
     <string name="start_scan">Scan</string>
     <string name="title_activity_view_finger_prints">Scan results</string>
     <string name="action_list_all">List all</string>
+    <string name="action_export_all">Export all</string>
 </resources>

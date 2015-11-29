@@ -14,17 +14,19 @@ public class WifiFingerPrint extends SugarRecord<WifiFingerPrint> implements Ser
     private int rssi;
     private String mac;
     private String networkName;
+    private Long timeStamp;
 
     public WifiFingerPrint(){
     }
 
-    public WifiFingerPrint(float x, float y, float z, Integer rssi, String mac, String networkName){
+    public WifiFingerPrint(float x, float y, float z, Integer rssi, String mac, String networkName, Long timeStamp){
         this.x = x;
         this.y = y;
         this.z = z;
         this.rssi = rssi;
         this.mac = mac;
         this.networkName = networkName;
+        this.timeStamp = timeStamp;
     }
 
     public float getY() {
@@ -51,13 +53,18 @@ public class WifiFingerPrint extends SugarRecord<WifiFingerPrint> implements Ser
         return networkName;
     }
 
+    public Long getTimeStamp() {
+        return timeStamp;
+    }
+
 
     @Override
     public String toString(){
-        return networkName + ": (" + x + ", " + y + ", " + z + "), " + rssi + ", " + mac;
+        String ret = networkName + ": (" + x + ", " + y + ", " + z + "), " + rssi + ", " + mac;
+        return ret;
     }
 
-    @Override
+ /*   @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -82,5 +89,5 @@ public class WifiFingerPrint extends SugarRecord<WifiFingerPrint> implements Ser
         result = 31 * result + (mac != null ? mac.hashCode() : 0);
         result = 31 * result + (networkName != null ? networkName.hashCode() : 0);
         return result;
-    }
+    }*/
 }
