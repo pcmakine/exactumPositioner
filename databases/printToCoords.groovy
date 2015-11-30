@@ -8,7 +8,7 @@ import org.apache.ivy.util.StringUtils
         @Grab(group='org.apache.commons', module='commons-lang3', version='3.0')
 )
 
-def printToUse = 20;
+def printToUse = 13;
 file = new File("prints_original_first_floor.txt")
 List<String> lines = file.readLines();
 def fileout = new File("print.txt")
@@ -27,7 +27,7 @@ List<FingerPrint> kClosest = getKNeighbours(lineToFingerprint(print, false), dat
 
 private List<FingerPrint> getKNeighbours(FingerPrint print, List<FingerPrint> trainingData, int k){
     for(FingerPrint trainingPrint: trainingData){
-        double dist = calculateAverageEuclideanDistance(print, trainingPrint);
+        double dist = calculateAverageEuclideanDistanceVersion2(print, trainingPrint);
         trainingPrint.setDistance(dist);
     }
     trainingData.sort(new Comparator<FingerPrint>(){
@@ -75,6 +75,33 @@ private double calculateAverageEuclideanDistance(FingerPrint print, FingerPrint 
 
 }
 
+private double calculateAverageEuclideanDistanceVersion2(FingerPrint print, FingerPrint trainingPrint){
+    Map<String, Integer> rssiByMac = print.getAveragesByMac();
+    Map<String, Integer> trainingRssiByMac = trainingPrint.getAveragesByMac();
+    Iterator<String> iter = rssiByMac.keySet().iterator();
+    int distanceSquaredSum = 0;
+    int count = 0;          //how many observations
+    while( iter.hasNext() ){
+        String mac = iter.next();
+        int trainingRssi = -100;        //min possible value
+        int observerdRssi = rssiByMac.get(mac);
+        if( trainingRssiByMac.get(mac) != null ){
+            trainingRssi = trainingRssiByMac.get(mac);
+        }
+        int distance = observerdRssi - trainingRssi;
+        int differenceSquared = distance * distance;
+        distanceSquaredSum += differenceSquared;
+        count ++;
+    }
+    double euclideanDiff = Math.sqrt(distanceSquaredSum)
+
+    if(count == 0){
+        return Double.MAX_VALUE;
+    }
+    double averageEuclideanDiff = euclideanDiff/count;
+    return averageEuclideanDiff;
+
+}
 
 public List<FingerPrint> dataToFingerprints(String data, boolean includesCoords){
     List<FingerPrint> prints = new ArrayList<>();
