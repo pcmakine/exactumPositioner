@@ -9,6 +9,7 @@ import org.apache.ivy.util.StringUtils
 )
 
 def printToUse = 13;
+
 file = new File("prints_original_first_floor.txt")
 List<String> lines = file.readLines();
 def fileout = new File("print.txt")
@@ -20,14 +21,58 @@ fileout.write lineWithoutCoords
 println "testPrint: " + lines.get(printToUse)
 
 File file = new File("trainingData.txt")
-
+println "training data path: " + file.absolutePath
 def print = new File("print.txt").text
-List<FingerPrint> kClosest = getKNeighbours(lineToFingerprint(print, false), dataToFingerprints(file.text, true), 1)
+List<FingerPrint> kClosest = getKNeighbours(lineToFingerprint(print, false), dataToFingerprints(file.text, true), 1, new DistanceCalculator2())
+FingerPrint closest = kClosest.get(0);
+System.out.println("The estimated location is at coordinates z:" + closest.getZ() + " x: " + closest.getX() + " y: " + closest.getY());
 
+//calculateAverageError("prints_original_first_floor.txt", "trainingData.txt")
 
-private List<FingerPrint> getKNeighbours(FingerPrint print, List<FingerPrint> trainingData, int k){
+private void calculateAverageError(String fileNamePrints, String fileNameTraining){
+    file = new File(fileNamePrints)
+    File trainingFile = new File(fileNameTraining)
+    List<String> lines = file.readLines();
+
+    double distanceSquaredSum = 0;
+
+    def errorsX = []
+    def errorsY = []
+    def errorsZ = []
+    lines.each{ line ->
+        def fileout = new File("print.txt")
+        String[] arr = line.split(';')
+        Float trueZ = Float.parseFloat(arr[0]);
+        Float trueX = Float.parseFloat(arr[1]);
+        Float trueY = Float.parseFloat(arr[2]);
+        String[] subArray = Arrays.copyOfRange(arr, 3, arr.length);
+        String lineWithoutCoords = StringUtils.join(subArray, ';')
+        fileout.write lineWithoutCoords
+        def print = new File("print.txt").text
+
+        FingerPrintDistanceCalculator calc = new DistanceCalculator2();
+        List<FingerPrint> kClosest = getKNeighbours(lineToFingerprint(print, false), dataToFingerprints(trainingFile.text, true), 1, calc)
+        FingerPrint closest = kClosest.get(0);
+
+        double distance = Math.abs(closest.getX() - trueX) + Math.abs(closest.getY() - trueY);
+        double squaredDistance = distance * distance;
+        distanceSquaredSum += squaredDistance;
+
+        errorsX.add(Math.abs(closest.getX() - trueX))
+        errorsY.add(Math.abs(closest.getY() - trueY))
+        errorsZ.add(Math.abs(closest.getZ() - trueZ))
+    }
+    double euclideanDiff = Math.sqrt(distanceSquaredSum)
+    println "Total average distance with respect to x and y: " + euclideanDiff/lines.size()
+    println "Max error in x: " + errorsX.max();
+    println "Max error in y: " + errorsY.max();
+    println "Max error in z: " + errorsZ.max();
+    println errorsX.toString()
+}
+
+private List<FingerPrint> getKNeighbours(FingerPrint print, List<FingerPrint> trainingData, int k, FingerPrintDistanceCalculator calc){
     for(FingerPrint trainingPrint: trainingData){
-        double dist = calculateAverageEuclideanDistanceVersion2(print, trainingPrint);
+        double dist = calc.calculateAverageEuclideanDistance(print, trainingPrint);
         trainingPrint.setDistance(dist);
     }
     trainingData.sort(new Comparator<FingerPrint>(){
@@ -37,70 +82,13 @@ private List<FingerPrint> getKNeighbours(FingerPrint print, List<FingerPrint> tr
     });
 
     int count = 1;
-    println "Prints ordered by distance: "
+ /*   println "Prints ordered by distance: "
     for( FingerPrint trainingPrint: trainingData){
         println count + ": " + trainingPrint.getDistanceDebugPrint();
         count++;
-    }
+    }*/
 
     return trainingData.subList(0, k)
-}
-
-private double calculateAverageEuclideanDistance(FingerPrint print, FingerPrint trainingPrint){
-    Map<String, Integer> rssiByMac = print.getAveragesByMac();
-    Map<String, Integer> trainingRssiByMac = trainingPrint.getAveragesByMac();
-    Iterator<String> iter = rssiByMac.keySet().iterator();
-    int distanceSquaredSum = 0;
-    int count = 0;          //how many same mac addresses the prints have
-    while( iter.hasNext() ){
-        String mac = iter.next();
-        if( trainingRssiByMac.get(mac) != null ){
-            int distance = rssiByMac.get(mac) - trainingRssiByMac.get(mac);
-            int differenceSquared = distance * distance;
-            distanceSquaredSum += differenceSquared;
-            count ++;
-
-           /* if(trainingPrint.getX() == 952 && trainingPrint.getY() == 866){
-                println "training signal: " + trainingRssiByMac.get(mac) + ", real signal: " + rssiByMac.get(mac)
-            }*/
-        }
-    }
-    double euclideanDiff = Math.sqrt(distanceSquaredSum)
-
-    if(count == 0){
-        return Double.MAX_VALUE;
-    }
-    double averageEuclideanDiff = euclideanDiff/count;
-    return averageEuclideanDiff;
-
-}
-
-private double calculateAverageEuclideanDistanceVersion2(FingerPrint print, FingerPrint trainingPrint){
-    Map<String, Integer> rssiByMac = print.getAveragesByMac();
-    Map<String, Integer> trainingRssiByMac = trainingPrint.getAveragesByMac();
-    Iterator<String> iter = rssiByMac.keySet().iterator();
-    int distanceSquaredSum = 0;
-    int count = 0;          //how many observations
-    while( iter.hasNext() ){
-        String mac = iter.next();
-        int trainingRssi = -100;        //min possible value
-        int observerdRssi = rssiByMac.get(mac);
-        if( trainingRssiByMac.get(mac) != null ){
-            trainingRssi = trainingRssiByMac.get(mac);
-        }
-        int distance = observerdRssi - trainingRssi;
-        int differenceSquared = distance * distance;
-        distanceSquaredSum += differenceSquared;
-        count ++;
-    }
-    double euclideanDiff = Math.sqrt(distanceSquaredSum)
-
-    if(count == 0){
-        return Double.MAX_VALUE;
-    }
-    double averageEuclideanDiff = euclideanDiff/count;
-    return averageEuclideanDiff;
-
 }
 
 public List<FingerPrint> dataToFingerprints(String data, boolean includesCoords){
@@ -280,5 +268,69 @@ public class Observation {
     public String toString(){
         String ret =  mac  + ": " +  rssi;
         return ret;
+    }
+}
+public interface FingerPrintDistanceCalculator{
+    public double calculateAverageEuclideanDistance(FingerPrint print, FingerPrint trainingPrint);
+}
+
+public class DistanceCalculator1 implements FingerPrintDistanceCalculator{
+    double calculateAverageEuclideanDistance(FingerPrint print, FingerPrint trainingPrint) {
+        Map<String, Integer> rssiByMac = print.getAveragesByMac();
+        Map<String, Integer> trainingRssiByMac = trainingPrint.getAveragesByMac();
+        Iterator<String> iter = rssiByMac.keySet().iterator();
+        int distanceSquaredSum = 0;
+        int count = 0;          //how many same mac addresses the prints have
+        while( iter.hasNext() ){
+            String mac = iter.next();
+            if( trainingRssiByMac.get(mac) != null ){
+                int distance = rssiByMac.get(mac) - trainingRssiByMac.get(mac);
+                int differenceSquared = distance * distance;
+                distanceSquaredSum += differenceSquared;
+                count ++;
+
+                /* if(trainingPrint.getX() == 952 && trainingPrint.getY() == 866){
+                     println "training signal: " + trainingRssiByMac.get(mac) + ", real signal: " + rssiByMac.get(mac)
+                 }*/
+            }
+        }
+        double euclideanDiff = Math.sqrt(distanceSquaredSum)
+
+        if(count == 0){
+            return Double.MAX_VALUE;
+        }
+        double averageEuclideanDiff = euclideanDiff/count;
+        return averageEuclideanDiff;
+    }
+}
+
+public class DistanceCalculator2 implements FingerPrintDistanceCalculator {
+
+    public double calculateAverageEuclideanDistance(FingerPrint print, FingerPrint trainingPrint) {
+        Map<String, Integer> rssiByMac = print.getAveragesByMac();
+        Map<String, Integer> trainingRssiByMac = trainingPrint.getAveragesByMac();
+        Iterator<String> iter = rssiByMac.keySet().iterator();
+        int distanceSquaredSum = 0;
+        int count = 0;          //how many observations
+        while( iter.hasNext() ){
+            String mac = iter.next();
+            int trainingRssi = -100;        //min possible value
+            int observerdRssi = rssiByMac.get(mac);
+            if( trainingRssiByMac.get(mac) != null ){
+                trainingRssi = trainingRssiByMac.get(mac);
+            }
+            int distance = observerdRssi - trainingRssi;
+            int differenceSquared = distance * distance;
+            distanceSquaredSum += differenceSquared;
+            count ++;
+        }
+        double euclideanDiff = Math.sqrt(distanceSquaredSum)
+
+        if(count == 0){
+            return Double.MAX_VALUE;
+        }
+        double averageEuclideanDiff = euclideanDiff/count;
+        return averageEuclideanDiff;
+
     }
 }
