@@ -135,7 +135,9 @@ public class Calibration extends AppCompatActivity
 
     private void startListActivity(List<WifiFingerPrint> fingerPrints, boolean newRecords){
         Intent intent = new Intent(Calibration.this, ScanResults.class);
-        intent.putExtra(CommonConstants.FINGERPRINT_KEY, (Serializable) fingerPrints);
+        if(fingerPrints != null){
+            intent.putExtra(CommonConstants.FINGERPRINT_KEY, (Serializable) fingerPrints);
+        }
         intent.putExtra(CommonConstants.NEW_RECORDS, newRecords);
         startActivity(intent);
     }
@@ -216,7 +218,7 @@ public class Calibration extends AppCompatActivity
         }
     }
 
-    private void listAll(){
+  /*  private void listAll(){
        // List<WifiFingerPrint> allPrints = WifiFingerPrint.findAll(WifiFingerPrint.class);
         //List<WifiFingerPrint> allPrints = WifiFingerPrint.find(WifiFingerPrint.class, null, null);
         List<WifiFingerPrint> allPrints =
@@ -226,7 +228,7 @@ public class Calibration extends AppCompatActivity
                     String.valueOf(CommonConstants.DEFAULT_LIMIT),
                         "0");
         startListActivity(allPrints, false);
-    }
+    }*/
 
     @Override
     protected void onPause() {
@@ -275,7 +277,7 @@ public class Calibration extends AppCompatActivity
             AlertDialog diaBox = ConfirmDelete();
             diaBox.show();
         }else if(id == R.id.action_list_all){
-            listAll();
+            startListActivity(null, false);
         }else if( id == R.id.action_export_all_data){
             String fileName = "prints.txt";
             DataExportService.exportAllData(fileName, this);

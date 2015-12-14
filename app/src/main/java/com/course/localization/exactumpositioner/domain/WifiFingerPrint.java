@@ -8,9 +8,9 @@ import java.io.Serializable;
  * Created by Pete on 22.11.2015.
  */
 public class WifiFingerPrint extends SugarRecord<WifiFingerPrint> implements Serializable{
-    private float x;
-    private float y;
-    private float z;
+    private Float x;
+    private Float y;
+    private Float z;
     private int rssi;
     private String mac;
     private String networkName;

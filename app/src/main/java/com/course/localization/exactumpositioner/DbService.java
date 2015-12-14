@@ -3,6 +3,7 @@ package com.course.localization.exactumpositioner;
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -31,9 +32,9 @@ public class DbService extends IntentService {
     public static final String TAG = DbService.class.getSimpleName();
 
     public static final String ACTION_SAVE_ALL = "com.course.localization.exactumpositioner.action.SAVE";
+    public static final String ACTION_LOAD_ORDER_BY_TIMESTAMP = "com.course.localization.exactumpositioner.action.LOAD_ORDER_BY_TIMESTAMP";
     public static final String RESPONSE_SUCCESS = "success";
     public static final String RESPONSE_FAILURE = "failure";
-    private static final String ACTION_BAZ = "com.course.localization.exactumpositioner.action.BAZ";
 
     public DbService() {
         super("DbService");
@@ -47,11 +48,9 @@ public class DbService extends IntentService {
             if (ACTION_SAVE_ALL.equals(action)) {
                 List prints = (ArrayList<WifiFingerPrint>) intent.getSerializableExtra(CommonConstants.FINGERPRINT_KEY);
                 savePrints(prints);
-            } /*else if (ACTION_BAZ.equals(action)) {
-                final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                handleActionBaz(param1, param2);
-            }*/
+            } else if( ACTION_LOAD_ORDER_BY_TIMESTAMP.equals(action) ){
+                findOrderedByTimestamp(intent);
+            }
         }
     }
 
@@ -70,6 +69,22 @@ public class DbService extends IntentService {
             broadcastIntent.putExtra(CommonConstants.SERVICE_RESPONSE_KEY, "nothing to save..");
             Log.d(TAG, "nothing to save...");
         }
+        broadcastIntent.putExtra(CommonConstants.SERVICE_ACTION_PERFORMED, ACTION_SAVE_ALL);
+        sendBroadcast(broadcastIntent);
+    }
+
+    private void findOrderedByTimestamp(Intent intent){
+        int limit = intent.getIntExtra(CommonConstants.LIMIT_KEY, 100);
+        int offset = intent.getIntExtra(CommonConstants.OFFSET_KEY, 0);
+        Log.d(TAG, "db service finding latest prints, limit: " + limit + ", offset: " + offset);
+        ArrayList<WifiFingerPrint> nextPrints = new ArrayList(WifiFingerPrint.findWithQuery(WifiFingerPrint.class,
+                CommonConstants.QUERY_LIMIT_PRINTS, String.valueOf(limit), String.valueOf(offset)));
+        Intent broadcastIntent = new Intent();
+        broadcastIntent.setAction(CommonConstants.ACTION_RESP);
+        broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
+       // broadcastIntent.putExtra(CommonConstants.FINGERPRINT_KEY, nextPrints);
+        FreshDataHolder.getInstance().setLatestFetchedPrints(nextPrints);
+        broadcastIntent.putExtra(CommonConstants.SERVICE_ACTION_PERFORMED, ACTION_LOAD_ORDER_BY_TIMESTAMP);
         sendBroadcast(broadcastIntent);
     }
 
@@ -97,8 +112,26 @@ public class DbService extends IntentService {
         );
     }
 
+    public static void findPrintsOrderByTimeStamp(int limit, int offset, Context context){
+        Intent intent = new Intent(context, DbService.class);
+        intent.putExtra(CommonConstants.LIMIT_KEY, limit);
+        intent.putExtra(CommonConstants.OFFSET_KEY, offset);
+        intent.setAction(DbService.ACTION_LOAD_ORDER_BY_TIMESTAMP);
+        context.startService(intent);
+    }
+
+    private void showToast(final String message, final int length){
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), message, length).show();
+            }
+        });
+    }
 
 
+
+    /*
     //This should probably be part of the algorithm that resolves the fingerprint to  a location
     private List<WifiFingerPrint> averagePrints(List<WifiFingerPrint> printList){
         Log.d(TAG, "averaging the prints");
@@ -140,14 +173,5 @@ public class DbService extends IntentService {
         }
 
         return retPrintList;
-    }
-
-    private void showToast(final String message, final int length){
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(), message, length).show();
-            }
-        });
-    }
+    }*/
 }
